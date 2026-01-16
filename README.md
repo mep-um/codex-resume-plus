@@ -135,7 +135,8 @@ Toggle the preview with:
   blocked if the rollout file looks open (via `lsof`). If `lsof` is missing,
   archive/unarchive is treated as a hard block.
 - **Trust updates are serialized:** updates to `~/.codex/config.toml` are written
-  atomically and guarded by a lock file.
+  atomically and guarded by an advisory lock on the Codex home directory (no
+  lock file is created).
 
 ## Common workflows
 

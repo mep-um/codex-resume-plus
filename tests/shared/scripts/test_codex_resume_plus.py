@@ -543,6 +543,18 @@ def test_ensure_path_trusted_creates_config_with_0600(codex_home: Path, tmp_path
     assert (config.stat().st_mode & 0o777) == 0o600
 
 
+def test_ensure_path_trusted_does_not_create_config_lock_file(
+    codex_home: Path, tmp_path: Path
+):
+    root = tmp_path / "proj"
+    root.mkdir(parents=True, exist_ok=True)
+
+    config = resume_plus.get_codex_config_path()
+    resume_plus.ensure_path_trusted(root, config_path=config)
+
+    assert not (codex_home / "config.toml.lock").exists()
+
+
 def test_ensure_path_trusted_escapes_quotes_and_backslashes(
     codex_home: Path, tmp_path: Path
 ):

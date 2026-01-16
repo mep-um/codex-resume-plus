@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "codex-resume-plus"
+version = "0.1.0"
+description = "Interactive Codex session picker with titles, archiving, and workdir overrides."
+packages = [{ include = "scripts" }]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+pyright = "^1.1.393"
+pytest = "^8.4.0"
+ruff = "^0.9.0"
+
+[tool.poetry.scripts]
+codex-resume-plus = "scripts.codex_resume_plus:main"
+
+[tool.black]
+line-length = 88
+target-version = ["py39"]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 88
+src = ["scripts", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

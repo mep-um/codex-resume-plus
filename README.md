@@ -56,7 +56,18 @@ resume it in the right place, and archive it safely.
 
 ## Install
 
-For development / local use:
+Homebrew (recommended):
+
+```bash
+brew tap mep-um/tap
+brew install codex-resume-plus
+```
+
+Notes:
+
+- `codex` (the Codex CLI) must be installed separately and available on your `PATH`.
+
+Development / local use:
 
 ```bash
 brew install fzf

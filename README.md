@@ -131,6 +131,12 @@ Toggle the preview with:
 - `Ctrl-T`: summary (default)
 - `Ctrl-V`: full transcript (still skips obvious boilerplate user messages)
 
+Mouse notes:
+
+- Mouse wheel scrolling works inside `fzf` by default.
+- If you want normal click-and-drag selection/copy, run `codex-resume-plus --no-mouse`
+  (this disables mouse-wheel scrolling inside the UI).
+
 ## How it stays safe
 
 - **Never rewrites rollout logs:** titles and workdir overrides live in sidecar

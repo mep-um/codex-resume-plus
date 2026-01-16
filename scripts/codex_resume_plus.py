@@ -1326,6 +1326,14 @@ def _parse_public_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespa
         default="summary",
         help="Initial preview mode (default: summary).",
     )
+    parser.add_argument(
+        "--no-mouse",
+        action="store_true",
+        help=(
+            "Disable mouse support in fzf (enables normal click-and-drag selection/"
+            "copy, but disables mouse-wheel scrolling in the UI)."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -2060,9 +2068,6 @@ def _run_picker(args: argparse.Namespace) -> int:
     fzf_args = [
         "fzf",
         "--ansi",
-        # Allow normal click-and-drag selection in the terminal (for copy/paste)
-        # by disabling mouse reporting inside fzf.
-        "--no-mouse",
         # Make the active row visually obvious even when a terminal theme's
         # selection background is subtle.
         "--pointer=>>",
@@ -2101,6 +2106,11 @@ def _run_picker(args: argparse.Namespace) -> int:
         "--bind",
         f"focus:transform({refresh_ui_cmd})",
     ]
+    if getattr(args, "no_mouse", False):
+        # RATIONALE: With mouse enabled, terminals enter mouse reporting mode,
+        # which blocks normal selection/copy. Disabling mouse restores normal
+        # click-and-drag selection at the cost of mouse-wheel scrolling.
+        fzf_args.append("--no-mouse")
     if args.include_archived:
         fzf_args.extend(["--bind", f"ctrl-u:transform({unarchive_fzf_cmd})"])
 

@@ -10,9 +10,18 @@ import pytest
 from scripts import codex_resume_plus as resume_plus
 
 
-def _picker_args(*, all: bool, include_archived: bool, preview: str = "summary"):
+def _picker_args(
+    *,
+    all: bool,
+    include_archived: bool,
+    preview: str = "summary",
+    no_mouse: bool = False,
+):
     return argparse.Namespace(
-        all=all, include_archived=include_archived, preview=preview
+        all=all,
+        include_archived=include_archived,
+        preview=preview,
+        no_mouse=no_mouse,
     )
 
 

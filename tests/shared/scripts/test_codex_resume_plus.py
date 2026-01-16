@@ -50,6 +50,14 @@ def _response_item(*, role: str, text: str) -> dict:
     }
 
 
+def _fzf_stdout(*, selected_line: str, query: str = "", key: str = "") -> str:
+    # fzf output format when using: --print-query --expect=<keys>
+    #   1) query
+    #   2) key name (empty when Enter is used)
+    #   3) selected line(s)
+    return f"{query}\n{key}\n{selected_line}\n"
+
+
 @pytest.fixture
 def codex_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setenv("CODEX_HOME", str(tmp_path))
@@ -264,7 +272,7 @@ def test_run_picker_does_not_resume_archived_selection(
         resume_plus.subprocess,
         "run",
         lambda *_a, **_k: SimpleNamespace(
-            returncode=0, stdout=selected_line, stderr=""
+            returncode=0, stdout=_fzf_stdout(selected_line=selected_line), stderr=""
         ),
     )
     monkeypatch.setattr(resume_plus, "_is_archived_rollout", lambda _p: True)
@@ -309,7 +317,7 @@ def test_run_picker_execs_codex_on_unarchived_selection(
         resume_plus.subprocess,
         "run",
         lambda *_a, **_k: SimpleNamespace(
-            returncode=0, stdout=selected_line, stderr=""
+            returncode=0, stdout=_fzf_stdout(selected_line=selected_line), stderr=""
         ),
     )
     monkeypatch.setattr(resume_plus, "_is_archived_rollout", lambda _p: False)
@@ -361,7 +369,7 @@ def test_run_picker_execs_codex_with_cd_override_when_set(
         resume_plus.subprocess,
         "run",
         lambda *_a, **_k: SimpleNamespace(
-            returncode=0, stdout=selected_line, stderr=""
+            returncode=0, stdout=_fzf_stdout(selected_line=selected_line), stderr=""
         ),
     )
     monkeypatch.setattr(resume_plus, "_is_archived_rollout", lambda _p: False)
@@ -420,7 +428,7 @@ def test_run_picker_blocks_when_rollout_is_open(
         resume_plus.subprocess,
         "run",
         lambda *_a, **_k: SimpleNamespace(
-            returncode=0, stdout=selected_line, stderr=""
+            returncode=0, stdout=_fzf_stdout(selected_line=selected_line), stderr=""
         ),
     )
     monkeypatch.setattr(resume_plus, "_is_archived_rollout", lambda _p: False)

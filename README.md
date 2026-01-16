@@ -113,6 +113,7 @@ flags you use when launching Codex.
 | `Ctrl-R` | Reload list |
 | `Ctrl-T` | Summary preview |
 | `Ctrl-V` | Full transcript preview |
+| `Ctrl-G` | Toggle mouse mode (scroll ↔ copy) |
 
 ## How the UI works
 
@@ -134,8 +135,10 @@ Toggle the preview with:
 Mouse notes:
 
 - Mouse wheel scrolling works inside `fzf` by default.
-- If you want normal click-and-drag selection/copy, run `codex-resume-plus --no-mouse`
-  (this disables mouse-wheel scrolling inside the UI).
+- To temporarily switch to normal click-and-drag selection/copy, press `Ctrl-G`
+  (this disables mouse-wheel scrolling inside the UI until you press `Ctrl-G`
+  again).
+- If you want to start in copy mode every time, run `codex-resume-plus --no-mouse`.
 
 ## How it stays safe
 

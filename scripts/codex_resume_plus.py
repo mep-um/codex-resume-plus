@@ -1819,7 +1819,7 @@ def _build_fzf_header(*, include_archived: bool, cwd_trusted: bool) -> str:
         base += " | ^U unarchive×2"
     if not cwd_trusted:
         base += " | ^Y trust pwd×2"
-    base += " | ^R reload | ^T sum | ^V full"
+    base += " | ^R reload | ^T sum | ^V full | ^G mouse"
     return base
 
 
@@ -1947,191 +1947,211 @@ def _run_picker(args: argparse.Namespace) -> int:
 
     self_script = Path(__file__).resolve()
 
-    cwd_trusted = is_path_trusted(Path.cwd().resolve())
+    no_mouse = bool(getattr(args, "no_mouse", False))
+    query = ""
 
-    list_cmd = _build_list_cmd(
-        script_path=self_script,
-        show_all=bool(args.all),
-        include_archived=bool(args.include_archived),
-    )
-    fzf_header = _build_fzf_header(
-        include_archived=bool(args.include_archived),
-        cwd_trusted=cwd_trusted,
-    )
-    fzf_prompt = _build_fzf_prompt(cwd_trusted=cwd_trusted)
+    while True:
+        cwd_trusted = is_path_trusted(Path.cwd().resolve())
 
-    path_field = f"{{{FZF_FIELD_ROLLOUT_PATH}}}"
+        list_cmd = _build_list_cmd(
+            script_path=self_script,
+            show_all=bool(args.all),
+            include_archived=bool(args.include_archived),
+        )
+        fzf_header = _build_fzf_header(
+            include_archived=bool(args.include_archived),
+            cwd_trusted=cwd_trusted,
+        )
+        fzf_prompt = _build_fzf_prompt(cwd_trusted=cwd_trusted)
 
-    preview_cmd_full = shell_join_fzf_command(
-        [
+        path_field = f"{{{FZF_FIELD_ROLLOUT_PATH}}}"
+
+        preview_cmd_full = shell_join_fzf_command(
+            [
+                sys.executable,
+                str(self_script),
+                "preview",
+                "--mode",
+                "full",
+                "--path",
+                path_field,
+            ]
+        )
+        preview_cmd_summary = shell_join_fzf_command(
+            [
+                sys.executable,
+                str(self_script),
+                "preview",
+                "--mode",
+                "summary",
+                "--path",
+                path_field,
+            ]
+        )
+
+        session_id_field = f"{{{FZF_FIELD_SESSION_ID}}}"
+
+        rename_cmd_parts: list[str] = [
             sys.executable,
             str(self_script),
-            "preview",
-            "--mode",
-            "full",
+            "rename",
+            "--session-id",
+            session_id_field,
+        ]
+        rename_cmd = shell_join_fzf_command(rename_cmd_parts)
+
+        cwd_override_cmd_parts: list[str] = [
+            sys.executable,
+            str(self_script),
+            "cwd-override",
+            "--session-id",
+            session_id_field,
+        ]
+        cwd_override_cmd = shell_join_fzf_command(cwd_override_cmd_parts)
+
+        archive_fzf_cmd_parts: list[str] = [
+            sys.executable,
+            str(self_script),
+            "fzf-archive",
             "--path",
             path_field,
-        ]
-    )
-    preview_cmd_summary = shell_join_fzf_command(
-        [
-            sys.executable,
-            str(self_script),
-            "preview",
-            "--mode",
-            "summary",
-            "--path",
-            path_field,
-        ]
-    )
-
-    session_id_field = f"{{{FZF_FIELD_SESSION_ID}}}"
-
-    rename_cmd_parts: list[str] = [
-        sys.executable,
-        str(self_script),
-        "rename",
-        "--session-id",
-        session_id_field,
-    ]
-    rename_cmd = shell_join_fzf_command(rename_cmd_parts)
-
-    cwd_override_cmd_parts: list[str] = [
-        sys.executable,
-        str(self_script),
-        "cwd-override",
-        "--session-id",
-        session_id_field,
-    ]
-    cwd_override_cmd = shell_join_fzf_command(cwd_override_cmd_parts)
-
-    archive_fzf_cmd_parts: list[str] = [
-        sys.executable,
-        str(self_script),
-        "fzf-archive",
-        "--path",
-        path_field,
-        "--session-id",
-        session_id_field,
-        *(["--all"] if args.all else []),
-        *(["--include-archived"] if args.include_archived else []),
-    ]
-    archive_fzf_cmd = shell_join_fzf_command(archive_fzf_cmd_parts)
-
-    unarchive_fzf_cmd_parts: list[str] = [
-        sys.executable,
-        str(self_script),
-        "fzf-unarchive",
-        "--path",
-        path_field,
-        "--session-id",
-        session_id_field,
-        *(["--all"] if args.all else []),
-        *(["--include-archived"] if args.include_archived else []),
-    ]
-    unarchive_fzf_cmd = shell_join_fzf_command(unarchive_fzf_cmd_parts)
-
-    trust_fzf_cmd = shell_join_fzf_command(
-        [
-            sys.executable,
-            str(self_script),
-            "fzf-trust-pwd",
+            "--session-id",
+            session_id_field,
+            *(["--all"] if args.all else []),
             *(["--include-archived"] if args.include_archived else []),
         ]
-    )
+        archive_fzf_cmd = shell_join_fzf_command(archive_fzf_cmd_parts)
 
-    refresh_ui_cmd_parts: list[str] = [
-        sys.executable,
-        str(self_script),
-        "fzf-refresh-ui",
-        *(["--all"] if args.all else []),
-        *(["--include-archived"] if args.include_archived else []),
-    ]
-    refresh_ui_cmd = shell_join_fzf_command(refresh_ui_cmd_parts)
+        unarchive_fzf_cmd_parts: list[str] = [
+            sys.executable,
+            str(self_script),
+            "fzf-unarchive",
+            "--path",
+            path_field,
+            "--session-id",
+            session_id_field,
+            *(["--all"] if args.all else []),
+            *(["--include-archived"] if args.include_archived else []),
+        ]
+        unarchive_fzf_cmd = shell_join_fzf_command(unarchive_fzf_cmd_parts)
 
-    show_cwd = bool(args.all)
-    # RATIONALE: fzf cannot search hidden fields when --with-nth is set, so we
-    # append the full session id to the visible line (but hide it via ANSI
-    # "conceal") so pasting a full UUID (or a rollout filename/path) filters
-    # correctly.
-    if show_cwd:
-        with_nth = (
-            f"{{2}}{FZF_DELIM}{{3}}{FZF_DELIM}{{5}}{FZF_DELIM}{{4}} \x1b[1m|\x1b[22m"
-            "\x1b[8m {6} {7} {1}\x1b[28m"
-        )
-    else:
-        with_nth = (
-            f"{{2}}{FZF_DELIM}{{3}}{FZF_DELIM}{{4}} \x1b[1m|\x1b[22m"
-            "\x1b[8m {6} {7} {1}\x1b[28m"
+        trust_fzf_cmd = shell_join_fzf_command(
+            [
+                sys.executable,
+                str(self_script),
+                "fzf-trust-pwd",
+                *(["--include-archived"] if args.include_archived else []),
+            ]
         )
 
-    fzf_args = [
-        "fzf",
-        "--ansi",
-        # Make the active row visually obvious even when a terminal theme's
-        # selection background is subtle.
-        "--pointer=>>",
-        "--tabstop=4",
-        "--info=inline-right",
-        "--delimiter",
-        FZF_DELIM,
-        "--nth",
-        "1..",
-        "--with-nth",
-        with_nth,
-        "--header",
-        fzf_header,
-        "--prompt",
-        fzf_prompt,
-        "--preview",
-        preview_cmd_summary if args.preview == "summary" else preview_cmd_full,
-        "--preview-window",
-        "right,50%,wrap,~7",
-        "--height",
-        "90%",
-        "--bind",
-        f"ctrl-v:change-preview({preview_cmd_full})",
-        "--bind",
-        f"ctrl-t:change-preview({preview_cmd_summary})",
-        "--bind",
-        f"ctrl-r:transform({refresh_ui_cmd})",
-        "--bind",
-        f"ctrl-e:execute({rename_cmd})+reload-sync({list_cmd})",
-        "--bind",
-        f"ctrl-o:execute({cwd_override_cmd})+reload-sync({list_cmd})",
-        "--bind",
-        f"ctrl-x:transform({archive_fzf_cmd})",
-        "--bind",
-        f"ctrl-y:transform({trust_fzf_cmd})",
-        "--bind",
-        f"focus:transform({refresh_ui_cmd})",
-    ]
-    if getattr(args, "no_mouse", False):
-        # RATIONALE: With mouse enabled, terminals enter mouse reporting mode,
-        # which blocks normal selection/copy. Disabling mouse restores normal
-        # click-and-drag selection at the cost of mouse-wheel scrolling.
-        fzf_args.append("--no-mouse")
-    if args.include_archived:
-        fzf_args.extend(["--bind", f"ctrl-u:transform({unarchive_fzf_cmd})"])
+        refresh_ui_cmd_parts: list[str] = [
+            sys.executable,
+            str(self_script),
+            "fzf-refresh-ui",
+            *(["--all"] if args.all else []),
+            *(["--include-archived"] if args.include_archived else []),
+        ]
+        refresh_ui_cmd = shell_join_fzf_command(refresh_ui_cmd_parts)
 
-    env = os.environ.copy()
-    env["FZF_DEFAULT_COMMAND"] = list_cmd
+        show_cwd = bool(args.all)
+        # RATIONALE: fzf cannot search hidden fields when --with-nth is set, so we
+        # append the full session id to the visible line (but hide it via ANSI
+        # "conceal") so pasting a full UUID (or a rollout filename/path) filters
+        # correctly.
+        if show_cwd:
+            with_nth = (
+                f"{{2}}{FZF_DELIM}{{3}}{FZF_DELIM}{{5}}{FZF_DELIM}{{4}} \x1b[1m|\x1b[22m"
+                "\x1b[8m {6} {7} {1}\x1b[28m"
+            )
+        else:
+            with_nth = (
+                f"{{2}}{FZF_DELIM}{{3}}{FZF_DELIM}{{4}} \x1b[1m|\x1b[22m"
+                "\x1b[8m {6} {7} {1}\x1b[28m"
+            )
 
-    proc = subprocess.run(
-        fzf_args,
-        env=env,
-        stdout=subprocess.PIPE,
-        text=True,
-    )
-    if proc.returncode != 0:
-        # Returncode 1/130 are common for "no match"/ESC; treat as cancellation.
-        if proc.returncode not in {1, 130}:
-            print(f"fzf failed (exit code {proc.returncode}).", file=sys.stderr)
-        return 0
+        fzf_args = [
+            "fzf",
+            "--ansi",
+            # Make the active row visually obvious even when a terminal theme's
+            # selection background is subtle.
+            "--pointer=>>",
+            "--tabstop=4",
+            "--info=inline-right",
+            "--print-query",
+            "--expect=ctrl-g",
+            "--delimiter",
+            FZF_DELIM,
+            "--nth",
+            "1..",
+            "--with-nth",
+            with_nth,
+            "--header",
+            fzf_header,
+            "--prompt",
+            fzf_prompt,
+            "--preview",
+            preview_cmd_summary if args.preview == "summary" else preview_cmd_full,
+            "--preview-window",
+            "right,50%,wrap,~7",
+            "--height",
+            "90%",
+            "--bind",
+            f"ctrl-v:change-preview({preview_cmd_full})",
+            "--bind",
+            f"ctrl-t:change-preview({preview_cmd_summary})",
+            "--bind",
+            f"ctrl-r:transform({refresh_ui_cmd})",
+            "--bind",
+            f"ctrl-e:execute({rename_cmd})+reload-sync({list_cmd})",
+            "--bind",
+            f"ctrl-o:execute({cwd_override_cmd})+reload-sync({list_cmd})",
+            "--bind",
+            f"ctrl-x:transform({archive_fzf_cmd})",
+            "--bind",
+            f"ctrl-y:transform({trust_fzf_cmd})",
+            "--bind",
+            f"focus:transform({refresh_ui_cmd})",
+        ]
+        if query:
+            fzf_args.extend(["--query", query])
+        if no_mouse:
+            # RATIONALE: With mouse enabled, terminals enter mouse reporting mode,
+            # which blocks normal selection/copy. Disabling mouse restores normal
+            # click-and-drag selection at the cost of mouse-wheel scrolling.
+            fzf_args.append("--no-mouse")
+        if args.include_archived:
+            fzf_args.extend(["--bind", f"ctrl-u:transform({unarchive_fzf_cmd})"])
 
-    selected = (proc.stdout or "").strip()
-    if not selected:
-        return 0
+        env = os.environ.copy()
+        env["FZF_DEFAULT_COMMAND"] = list_cmd
+
+        proc = subprocess.run(
+            fzf_args,
+            env=env,
+            stdout=subprocess.PIPE,
+            text=True,
+        )
+        if proc.returncode != 0:
+            # Returncode 1/130 are common for "no match"/ESC; treat as cancellation.
+            if proc.returncode not in {1, 130}:
+                print(f"fzf failed (exit code {proc.returncode}).", file=sys.stderr)
+            return 0
+
+        output_lines = (proc.stdout or "").splitlines()
+        query = output_lines[0] if output_lines else ""
+        key = output_lines[1] if len(output_lines) > 1 else ""
+        selected = output_lines[2].strip() if len(output_lines) > 2 else ""
+
+        if key == "ctrl-g":
+            # Toggle mouse reporting so users can switch between scrolling
+            # (mouse enabled) and normal click-drag selection/copy (mouse disabled).
+            no_mouse = not no_mouse
+            continue
+
+        if not selected:
+            return 0
+
+        break
 
     fields = selected.split(FZF_DELIM)
     if len(fields) < FZF_FIELD_SESSION_ID:

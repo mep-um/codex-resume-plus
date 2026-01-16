@@ -113,10 +113,6 @@ def get_codex_config_path() -> Path:
     return get_codex_home() / "config.toml"
 
 
-def _get_codex_config_lock_path() -> Path:
-    return get_codex_home() / "config.toml.lock"
-
-
 @dataclasses.dataclass(frozen=True)
 class _ProjectTrustTable:
     header_start: int
@@ -239,22 +235,35 @@ def is_path_trusted(path: Path, *, config_path: Optional[Path] = None) -> bool:
 
 @contextmanager
 def _locked_codex_config_file(timeout_s: float = 5.0) -> Iterator[None]:
-    lock_path = _get_codex_config_lock_path()
-    lock_path.parent.mkdir(parents=True, exist_ok=True)
-    with lock_path.open("w", encoding="utf-8") as lock_file:
+    # RATIONALE: We update `config.toml` via atomic replace (os.replace). Locking the
+    # file itself doesn't serialize concurrent writers across a replace because the
+    # lock is held on the old inode. Locking the Codex home directory keeps the lock
+    # stable without creating a `config.toml.lock` file.
+    lock_dir = get_codex_home()
+    lock_dir.mkdir(parents=True, exist_ok=True)
+
+    lock_fd: Optional[int] = None
+    try:
+        lock_fd = os.open(str(lock_dir), os.O_RDONLY)
         start = time.monotonic()
         while True:
             try:
-                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 break
             except BlockingIOError:
                 if time.monotonic() - start > timeout_s:
                     raise RuntimeError(
-                        f"Timed out waiting for lock: {lock_path} (is another "
-                        "process updating the Codex config?)"
+                        f"Timed out waiting for lock on Codex home: {lock_dir} "
+                        "(is another process updating the Codex config?)"
                     )
                 time.sleep(0.1)
         yield
+    finally:
+        if lock_fd is not None:
+            try:
+                os.close(lock_fd)
+            except OSError:
+                pass
 
 
 def _write_text_atomic(path: Path, text: str) -> None:

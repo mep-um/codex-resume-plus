@@ -323,11 +323,6 @@ def test_run_picker_execs_codex_on_unarchived_selection(
     assert called["argv"] == [
         "codex",
         "resume",
-        "--search",
-        "--sandbox",
-        "workspace-write",
-        "--ask-for-approval",
-        "on-failure",
         "019b0000-0000-7000-8000-000000000402",
     ]
 
@@ -383,11 +378,6 @@ def test_run_picker_execs_codex_with_cd_override_when_set(
     assert called["argv"] == [
         "codex",
         "resume",
-        "--search",
-        "--sandbox",
-        "workspace-write",
-        "--ask-for-approval",
-        "on-failure",
         "--add-dir",
         str(tmp_path),
         "-C",

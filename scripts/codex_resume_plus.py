@@ -8,7 +8,7 @@ This is intentionally a standalone helper (not a Codex slash command):
   rollout file.
 
 Key bindings (fzf):
-- Enter: resume in Codex (`codex resume --search --sandbox workspace-write --ask-for-approval on-failure <session_id>`)
+- Enter: resume in Codex (`codex resume <session_id>`)
 - Ctrl-E: rename (writes ~/.codex/session_titles.json; blank = keep; '-' = clear with confirm)
 - Ctrl-O: set resume workdir (writes ~/.codex/session_cwd_overrides.json; '.' = current dir; '-' = clear with confirm)
 - Ctrl-Y: trust current directory (press twice to confirm; updates ~/.codex/config.toml)
@@ -22,10 +22,15 @@ Notes:
 - Workdir override (Ctrl-O) is per-session. It changes how this tool resumes the
   selected session by passing a working directory and writable scope flags, so
   relative paths and edits land in the intended repo:
-    codex resume --search --sandbox workspace-write --ask-for-approval on-failure --add-dir <workdir> -C <workdir> <id>
+    codex resume --add-dir <workdir> -C <workdir> <id>
 - Trust (Ctrl-Y) is global/persistent. It adds the current directory to the
   Codex config as trusted to reduce approval friction, but it does not change
   where a session resumes.
+
+Design note:
+- This tool intentionally does not pass `--sandbox`, `--ask-for-approval`, or
+  `--search` to `codex resume`. Those settings come from your Codex config
+  (`~/.codex/config.toml`) or whatever flags you pass when invoking `codex`.
 """
 
 from __future__ import annotations
@@ -2164,11 +2169,6 @@ def _run_picker(args: argparse.Namespace) -> int:
     argv_resume = [
         "codex",
         "resume",
-        "--search",
-        "--sandbox",
-        "workspace-write",
-        "--ask-for-approval",
-        "on-failure",
         session_id,
     ]
     if cwd_override:
@@ -2184,11 +2184,6 @@ def _run_picker(args: argparse.Namespace) -> int:
         argv_resume = [
             "codex",
             "resume",
-            "--search",
-            "--sandbox",
-            "workspace-write",
-            "--ask-for-approval",
-            "on-failure",
             "--add-dir",
             str(cwd_path),
             "-C",

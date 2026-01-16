@@ -96,6 +96,10 @@ Options:
 - `--include-archived`: include archived sessions in the list
 - `--preview {summary,full}`: initial preview mode (default: `summary`)
 
+Design note: `codex-resume-plus` does not pass `--sandbox`, `--ask-for-approval`, or `--search`
+to `codex resume`. Those settings come from your Codex config (`~/.codex/config.toml`) or any
+flags you use when launching Codex.
+
 ## Key bindings
 
 | Key | Action |
